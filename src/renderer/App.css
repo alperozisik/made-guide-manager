@@ -1,0 +1,17 @@
+/* src/renderer/App.css */
+.app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .webview-container {
+    flex: 1;
+    border-right: 1px solid #ccc;
+  }
+  
+  .control-panel {
+    width: 350px;
+    overflow-y: auto;
+    padding: 10px;
+  }

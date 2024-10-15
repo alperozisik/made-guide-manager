@@ -24,8 +24,7 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
       },
-      "console": "integratedTerminal",
-      "preLaunchTask": "npm: dev"
+      "console": "integratedTerminal"
     },
     {
       "name": "Electron: Renderer",
