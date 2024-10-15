@@ -1,39 +1,48 @@
 {
   "version": "0.2.0",
   "configurations": [
-      {
-          "type": "node",
-          "request": "launch",
-          "name": "Electron: Main",
-          "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
-          "runtimeArgs": [
-              "--remote-debugging-port=9223",
-              "."
-          ],
-          "env": {
-              "NVM_DIR": "$HOME/.nvm",
-              "PATH": "$HOME/.nvm/versions/node/v20.18.0/bin:${env:PATH}"
-          },
-          "windows": {
-              "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
-          }
+    {
+      "name": "Electron: Main",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeArgs": [
+        "--nolazy",
+        "-r",
+        "source-map-support/register",
+        "--remote-debugging-port=9223",
+        "."
+      ],
+      "env": {
+        "NVM_DIR": "$HOME/.nvm",
+        "PATH": "$HOME/.nvm/versions/node/v20.18.0/bin:${env:PATH}",
+        "NODE_ENV": "development",
+        "ELECTRON_DISABLE_SECURITY_WARNINGS": "true"
       },
-      {
-          "name": "Electron: Renderer",
-          "type": "chrome",
-          "request": "attach",
-          "port": 9223,
-          "webRoot": "${workspaceFolder}",
-          "timeout": 30000
-      }
+      "outputCapture": "std",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+      },
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: dev"
+    },
+    {
+      "name": "Electron: Renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9223,
+      "webRoot": "${workspaceFolder}",
+      "timeout": 30000
+    }
   ],
   "compounds": [
-      {
-          "name": "Electron: All",
-          "configurations": [
-              "Electron: Main",
-              "Electron: Renderer"
-          ]
-      }
+    {
+      "name": "Electron: All",
+      "configurations": [
+        "Electron: Main",
+        "Electron: Renderer"
+      ]
+    }
   ]
 }
