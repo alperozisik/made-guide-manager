@@ -9,10 +9,8 @@
   "keywords": [],
   "author": "alperozisik",
   "license": "Apache-2.0",
-  "devDependencies": {
-    "electron": "^32.1.2"
-  },
   "dependencies": {
+    "electron": "^32.2.0",
     "sqlite3": "^5.1.7"
   }
 }
