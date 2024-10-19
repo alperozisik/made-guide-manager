@@ -12,6 +12,7 @@ function ControlPanel({
   currentLink,
   updateCurrentLink,
   showModal,
+  getCurrentWebViewURL,
 }) {
   const [idInput, setIdInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -92,22 +93,11 @@ function ControlPanel({
    */
   const handleRetrieveFromPreview = () => {
     // Check if the WebView's URL is different
-    const webviewUrl = window.electronAPI.getWebViewUrl();
+    const webviewUrl = getCurrentWebViewURL();
     if (webviewUrl === currentLink.url) {
       alert('WebView URL is the same as the current link URL.');
       return;
     }
-
-    // Show modal dialog
-    /*     showModal(
-          <div>
-            <p>
-              Would you like to create a new version of the link (recommended) or update the current record?
-            </p>
-            <button onClick={handleNewLink}>New Link</button>
-            <button onClick={handleUpdateCurrent}>Update Current</button>
-          </div>
-        ); */
 
     showModal(
       'Would you like to create a new version of the link (recommended) or update the current record?',
@@ -139,8 +129,9 @@ function ControlPanel({
     const newLink = {
       ...currentLink,
       id: undefined, // Let the database assign a new ID
-      url: window.electronAPI.getWebViewUrl(),
+      url: getCurrentWebViewURL(),
       valid: 1,
+      predecessor: currentLink.id,
     };
     window.electronAPI.createLink(newLink).then((createdLink) => {
       // Add new link to the list and update state
@@ -156,7 +147,7 @@ function ControlPanel({
     // Update current link
     const updatedLink = {
       ...currentLink,
-      url: window.electronAPI.getWebViewUrl(),
+      url: getCurrentWebViewURL(),
     };
     updateCurrentLink(updatedLink);
     window.electronAPI.updateLink(updatedLink);

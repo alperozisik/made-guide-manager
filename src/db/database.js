@@ -92,31 +92,31 @@ function findLinkByIdInDB(id, showInvalid) {
  * @returns {Promise<void>}
  */
 function updateLinkInDB(link) {
-    return new Promise((resolve, reject) => {
-      const db = openDatabase();
-  
-      const { id, URL, Name, Certification, Valid, Successor } = link;
-      const query = `
+  return new Promise((resolve, reject) => {
+    const db = openDatabase();
+
+    const { id, URL, Name, Certification, Valid, Successor } = link;
+    const query = `
         UPDATE links
         SET URL = ?, Name = ?, Certification = ?, Valid = ?, Successor = ?
         WHERE id = ?
       `;
-      db.run(
-        query,
-        [URL, Name, Certification ? 1 : 0, Valid ? 1 : 0, Successor, id],
-        function (err) {
-          if (err) {
-            console.error('Error updating link:', err);
-            closeDatabase(db);
-            reject(err);
-          } else {
-            closeDatabase(db);
-            resolve();
-          }
+    db.run(
+      query,
+      [URL, Name, Certification ? 1 : 0, Valid ? 1 : 0, Successor, id],
+      function (err) {
+        if (err) {
+          console.error('Error updating link:', err);
+          closeDatabase(db);
+          reject(err);
+        } else {
+          closeDatabase(db);
+          resolve();
         }
-      );
-    });
-  }
+      }
+    );
+  });
+}
 
 /**
  * Fetch topics associated with a link.
@@ -151,49 +151,49 @@ function fetchTopicsForLink(linkId) {
  * @returns {Promise<void>}
  */
 function updateTopicsForLink(linkId, topicKeys) {
-    return new Promise((resolve, reject) => {
-      const db = openDatabase();
-  
-      db.serialize(() => {
-        db.run('BEGIN TRANSACTION;');
-  
-        // Delete existing Topic_Links for the link
-        const deleteQuery = `DELETE FROM Topic_Links WHERE link = ?`;
-        db.run(deleteQuery, [linkId], function (err) {
-          if (err) {
-            console.error('Error deleting Topic_Links:', err);
-            db.run('ROLLBACK;', [], () => {
-              closeDatabase(db);
-              reject(err);
-            });
-          } else {
-            // Yeni Topic_Links kayıtlarını ekle
-            const insertQuery = `INSERT INTO Topic_Links (topic, link) VALUES (?, ?)`;
-            const stmt = db.prepare(insertQuery);
-  
-            topicKeys.forEach((topicKey) => {
-              stmt.run([topicKey, linkId]);
-            });
-  
-            stmt.finalize((err) => {
-              if (err) {
-                console.error('Error inserting Topic_Links:', err);
-                db.run('ROLLBACK;', [], () => {
-                  closeDatabase(db);
-                  reject(err);
-                });
-              } else {
-                db.run('COMMIT;', [], () => {
-                  closeDatabase(db);
-                  resolve();
-                });
-              }
-            });
-          }
-        });
+  return new Promise((resolve, reject) => {
+    const db = openDatabase();
+
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION;');
+
+      // Delete existing Topic_Links for the link
+      const deleteQuery = `DELETE FROM Topic_Links WHERE link = ?`;
+      db.run(deleteQuery, [linkId], function (err) {
+        if (err) {
+          console.error('Error deleting Topic_Links:', err);
+          db.run('ROLLBACK;', [], () => {
+            closeDatabase(db);
+            reject(err);
+          });
+        } else {
+          // Yeni Topic_Links kayıtlarını ekle
+          const insertQuery = `INSERT INTO Topic_Links (topic, link) VALUES (?, ?)`;
+          const stmt = db.prepare(insertQuery);
+
+          topicKeys.forEach((topicKey) => {
+            stmt.run([topicKey, linkId]);
+          });
+
+          stmt.finalize((err) => {
+            if (err) {
+              console.error('Error inserting Topic_Links:', err);
+              db.run('ROLLBACK;', [], () => {
+                closeDatabase(db);
+                reject(err);
+              });
+            } else {
+              db.run('COMMIT;', [], () => {
+                closeDatabase(db);
+                resolve();
+              });
+            }
+          });
+        }
       });
     });
-  }
+  });
+}
 
 /**
  * Fetch all topics from the database.
@@ -222,38 +222,60 @@ function fetchAllTopics() {
  * @returns {Promise<number>} - The ID of the newly created link.
  */
 function createNewLinkInDB(link) {
-    return new Promise((resolve, reject) => {
-      const db = openDatabase();
-  
-      db.serialize(() => {
-        db.run('BEGIN TRANSACTION;');
-  
-        const { URL, Name, Certification, Valid, Successor } = link;
-        const query = `
-          INSERT INTO links (URL, Name, Certification, Valid, Successor)
-          VALUES (?, ?, ?, ?, ?)
-        `;
-        db.run(
-          query,
-          [URL, Name, Certification ? 1 : 0, Valid ? 1 : 0, Successor],
-          function (err) {
-            if (err) {
-              console.error('Error creating new link:', err);
+  return new Promise((resolve, reject) => {
+    const db = openDatabase();
+
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION;');
+
+      const { url, name, certification, valid, successor, predecessor } = link;
+      const insertQuery = `
+        INSERT INTO links (URL, Name, Certification, Valid, Successor)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+      const updateOldLinkQuery = `
+        UPDATE links
+        SET Successor = ?, Valid = 0
+        WHERE id = ?
+      `;
+
+      db.run(insertQuery, [url, name, certification ? 1 : 0, valid ? 1 : 0, successor], function (err) {
+        if (err) {
+          console.error('Error creating new link:', err);
+          db.run('ROLLBACK;', [], () => {
+            closeDatabase(db);
+            reject(err);
+          });
+          return;
+        }
+
+        const newLinkId = this.lastID;
+        const commitAndResolve = () => {
+          db.run('COMMIT;', [], () => {
+            closeDatabase(db);
+            resolve(newLinkId); // Return the ID of the new link
+          });
+        }
+
+        if (predecessor) {
+          db.run(updateOldLinkQuery, [newLinkId, predecessor], function (err2) {
+            if (err2) {
+              console.error('Error updating old link:', err2);
               db.run('ROLLBACK;', [], () => {
                 closeDatabase(db);
-                reject(err);
+                reject(err2);
               });
-            } else {
-              db.run('COMMIT;', [], () => {
-                closeDatabase(db);
-                resolve(this.lastID); // Return the ID of the new link
-              });
+              return;
             }
-          }
-        );
+            commitAndResolve();
+          });
+        } else {
+          commitAndResolve();
+        }
       });
     });
-  }
+  });
+}
 
 module.exports = {
   fetchLinksFromDB,

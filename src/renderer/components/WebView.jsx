@@ -1,12 +1,11 @@
 // src/renderer/components/WebView.jsx
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 
-function WebView({ url }) {
-  const webviewRef = useRef(null);
+function WebView({ url, webviewRef }) {
 
   useEffect(() => {
-    if (webviewRef.current) {
+    if (webviewRef && webviewRef.current) {
       webviewRef.current.src = url;
 
       // Handle events as needed

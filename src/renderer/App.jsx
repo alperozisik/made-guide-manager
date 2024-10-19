@@ -1,5 +1,5 @@
 // src/renderer/App.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import WebView from './components/WebView';
 import ControlPanel from './components/ControlPanel';
 import Modal from './components/Modal';
@@ -11,6 +11,7 @@ function App() {
   const [showInvalidLinks, setShowInvalidLinks] = useState(false);
   const [currentLink, setCurrentLink] = useState(null);
   const [modalContent, setModalContent] = useState(null);
+  const webviewRef = useRef(null);
 
   useEffect(() => {
     // Fetch initial links
@@ -61,9 +62,21 @@ function App() {
     setModalContent(null);
   };
 
+  const getCurrentWebViewURL = () => {
+    if (webviewRef.current) {
+      const url = webviewRef.current.getURL();
+      console.log('Current WebView URL:', url);
+      return url;
+    }
+    return '';
+  };
+
   return (
     <div className="app-container">
-      <WebView url={currentLink ? currentLink.url : ''} />
+      <WebView
+        url={currentLink ? currentLink.url : ''}
+        webviewRef={webviewRef}
+      />
       <ControlPanel
         links={links}
         currentIndex={currentIndex}
@@ -73,6 +86,7 @@ function App() {
         currentLink={currentLink}
         updateCurrentLink={updateCurrentLink}
         showModal={showModal}
+        getCurrentWebViewURL={getCurrentWebViewURL}
       />
       {modalContent && (
         <Modal

@@ -38,14 +38,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   /**
-   * Get the current URL from the WebView.
-   */
-  getWebViewUrl: () => {
-    // Implement logic to get the current URL from the WebView
-    return document.querySelector('iframe')?.contentWindow?.location.href || '';
-  },
-
-  /**
    * Create a new link in the database.
    * @param {Object} link - The new link data.
    */
