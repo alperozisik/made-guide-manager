@@ -157,8 +157,7 @@ function ControlPanel({
       valid: 1,
       predecessor: currentLink.id,
     };
-    debugger;
-
+    
     window.electronAPI.createLink(newLink).then((createdLink) => {
       // Add new link to the list and update state
       if (createdLink.error) {

@@ -4,7 +4,9 @@ import React from 'react';
 import './Modal.css'; // Stil dosyasını eklemeyi unutmayın
 
 function Modal({ isOpen, onClose, text, buttons }) {
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="modal-overlay">
@@ -16,8 +18,10 @@ function Modal({ isOpen, onClose, text, buttons }) {
               key={index}
               className="modal-button"
               onClick={() => {
+                if (!!button.closeOnClick) {
+                  onClose();
+                }
                 if (button.action) button.action();
-                if (button.closeOnClick !== false) onClose();
               }}
             >
               {button.text}
