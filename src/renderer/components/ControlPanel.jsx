@@ -133,11 +133,17 @@ function ControlPanel({
       valid: 1,
       predecessor: currentLink.id,
     };
+
     window.electronAPI.createLink(newLink).then((createdLink) => {
       // Add new link to the list and update state
+      if (createdLink.error) {
+        alert(createdLink.error);
+        return;
+      }
       updateCurrentLink(createdLink);
       onLinkChange(links.length); // Set to new index
     });
+
   };
 
   const handleUpdateCurrent = () => {
