@@ -48,8 +48,13 @@ function App() {
     });
   };
 
-  const showModal = (content) => {
-    setModalContent(content);
+  /**
+   * dnyamic showModal
+   * @param {string} text - Message in modal
+   * @param {Array} buttons - Buttons in modal
+   */
+  const showModal = (text, buttons) => {
+    setModalContent({ text, buttons });
   };
 
   const closeModal = () => {
@@ -70,9 +75,12 @@ function App() {
         showModal={showModal}
       />
       {modalContent && (
-        <Modal onClose={closeModal}>
-          {modalContent}
-        </Modal>
+        <Modal
+          isOpen={true}
+          onClose={closeModal}
+          text={modalContent.text}
+          buttons={modalContent.buttons}
+        />
       )}
     </div>
   );

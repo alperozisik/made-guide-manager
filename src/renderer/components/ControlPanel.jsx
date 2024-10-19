@@ -99,17 +99,37 @@ function ControlPanel({
     }
 
     // Show modal dialog
+    /*     showModal(
+          <div>
+            <p>
+              Would you like to create a new version of the link (recommended) or update the current record?
+            </p>
+            <button onClick={handleNewLink}>New Link</button>
+            <button onClick={handleUpdateCurrent}>Update Current</button>
+          </div>
+        ); */
+
     showModal(
-      <div>
-        <p>
-          Would you like to create a new version of the link (recommended) or update the current
-          record?
-        </p>
-        <button onClick={handleNewLink}>New Link</button>
-        <button onClick={handleUpdateCurrent}>Update Current</button>
-      </div>
+      'Would you like to create a new version of the link (recommended) or update the current record?',
+      [
+        {
+          text: 'New Link',
+          action: handleNewLink,
+          closeOnClick: true,
+        },
+        {
+          text: 'Update Current',
+          action: handleUpdateCurrent,
+          closeOnClick: true,
+        },
+        {
+          text: 'Cancel',
+          closeOnClick: true,
+        },
+      ]
     );
   };
+
 
   const handleNewLink = () => {
     // Close modal
