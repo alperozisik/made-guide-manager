@@ -1,22 +1,32 @@
 /* src/renderer/components/ControlPanel.css */
 .control-item {
-    margin-bottom: 15px;
-  }
-  
-  .control-item label {
-    display: block;
-    margin-bottom: 5px;
-  }
-  
-  .control-item input[type="text"],
-  .control-item textarea {
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  .topics-list {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 5px;
-  }
+  margin-bottom: 15px;
+}
+
+.control-item label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.control-item input[type="text"],
+.control-item textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.topics-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 5px;
+}
+
+.input-bold {
+  font-weight: 400;
+  margin-right: 8px;
+}
+
+.input-display {
+  background-color: azure;
+  font-family: monospace;
+}

@@ -44,11 +44,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createLink: async (link) => {
     return await ipcRenderer.invoke('create-link', link);
   },
-
-  /**
-   * Get the preload path for the webview.
-   */
-  getWebViewPreloadPath: () => {
-    return 'webview-preload.js'; // Return a relative path
-  },
 });

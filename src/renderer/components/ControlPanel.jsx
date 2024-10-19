@@ -13,6 +13,8 @@ function ControlPanel({
   updateCurrentLink,
   showModal,
   getCurrentWebViewURL,
+  getCurrentWebViewTitle,
+  showModalInput
 }) {
   const [idInput, setIdInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -104,7 +106,7 @@ function ControlPanel({
       [
         {
           text: 'New Link',
-          action: handleNewLink,
+          action: getNewTitle,
           closeOnClick: true,
         },
         {
@@ -120,19 +122,42 @@ function ControlPanel({
     );
   };
 
+  const getNewTitle = () => {
+    let newPageTile = getCurrentWebViewTitle();
+    showModalInput({
+      title: 'Give a new (different name) for link',
+      message: <div>
+        Every link must have a different name<br />
+        <span className='input-bold'>Previous name:</span><span className='input-display'>{currentLink.name}</span>
+        <br />
+        <span className='input-bold'>Current page title:</span><span className='input-display'>{newPageTile}</span>
+      </div>,
+      suggestion: newPageTile,
+      onOK: (value) => {
+        handleNewLink({ name: value });
+      },
+      onCancel: () => {
+        console.log('ModalInput for new name cancelled.');
+      },
+    });
+  }
 
-  const handleNewLink = () => {
+
+  const handleNewLink = (linkOverride = {}) => {
     // Close modal
     showModal(null);
+
 
     // Create new link
     const newLink = {
       ...currentLink,
+      ...linkOverride,
       id: undefined, // Let the database assign a new ID
       url: getCurrentWebViewURL(),
       valid: 1,
       predecessor: currentLink.id,
     };
+    debugger;
 
     window.electronAPI.createLink(newLink).then((createdLink) => {
       // Add new link to the list and update state

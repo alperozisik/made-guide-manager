@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import WebView from './components/WebView';
 import ControlPanel from './components/ControlPanel';
 import Modal from './components/Modal';
+import ModalInput from './components/ModalInput';
 import './App.css';
 
 function App() {
@@ -12,6 +13,16 @@ function App() {
   const [currentLink, setCurrentLink] = useState(null);
   const [modalContent, setModalContent] = useState(null);
   const webviewRef = useRef(null);
+
+  // State for ModalInput
+  const [isModalInputOpen, setIsModalInputOpen] = useState(false);
+  const [modalInputProps, setModalInputProps] = useState({
+    title: '',
+    message: '',
+    suggestion: '',
+    onOK: null,
+    onCancel: null,
+  });
 
   useEffect(() => {
     // Fetch initial links
@@ -62,9 +73,38 @@ function App() {
     setModalContent(null);
   };
 
+  /**
+   * Function to open ModalInput
+   * @param {object} props - props for ModalInput 
+   */
+  const showModalInput = ({ title, message, suggestion, onOK, onCancel }) => {
+    setModalInputProps({ title, message, suggestion, onOK, onCancel });
+    setIsModalInputOpen(true);
+  };
+
+  const closeModalInput = () => {
+    setIsModalInputOpen(false);
+    setModalInputProps({
+      title: '',
+      message: '',
+      suggestion: '',
+      onOK: null,
+      onCancel: null,
+    });
+  };
+
+  const getCurrentWebViewTitle = () => {
+    if (webviewRef.current) {
+      let title = webviewRef.current.getTitle();
+      console.log('Current WebView Title:', title);
+      return title;
+    }
+    return '';
+  };
+
   const getCurrentWebViewURL = () => {
     if (webviewRef.current) {
-      const url = webviewRef.current.getURL();
+      let url = webviewRef.current.getURL();
       console.log('Current WebView URL:', url);
       return url;
     }
@@ -87,6 +127,8 @@ function App() {
         updateCurrentLink={updateCurrentLink}
         showModal={showModal}
         getCurrentWebViewURL={getCurrentWebViewURL}
+        getCurrentWebViewTitle={getCurrentWebViewTitle}
+        showModalInput={showModalInput}
       />
       {modalContent && (
         <Modal
@@ -94,6 +136,25 @@ function App() {
           onClose={closeModal}
           text={modalContent.text}
           buttons={modalContent.buttons}
+        />
+      )}
+      {isModalInputOpen && (
+        <ModalInput
+          title={modalInputProps.title}
+          message={modalInputProps.message}
+          suggestion={modalInputProps.suggestion}
+          onOK={(value) => {
+            if (modalInputProps.onOK) {
+              modalInputProps.onOK(value);
+            }
+            closeModalInput();
+          }}
+          onCancel={() => {
+            if (modalInputProps.onCancel) {
+              modalInputProps.onCancel();
+            }
+            closeModalInput();
+          }}
         />
       )}
     </div>
