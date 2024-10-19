@@ -12,6 +12,7 @@ const {
 } = require('./db/database');
 
 let mainWindow;
+const preloadPath = path.join(__dirname, 'preload', 'preload.js');
 
 /**
  * Function to create the main application window.
@@ -21,7 +22,7 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload', 'preload.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       enableRemoteModule: false,

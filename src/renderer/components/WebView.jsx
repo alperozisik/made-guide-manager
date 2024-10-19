@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react';
 
 function WebView({ url, webviewRef }) {
-
   useEffect(() => {
     if (webviewRef && webviewRef.current) {
       webviewRef.current.src = url;
@@ -20,7 +19,6 @@ function WebView({ url, webviewRef }) {
         allowpopups="true"
         partition="persist:webview"
         webpreferences="nativeWindowOpen,allowRunningInsecureContent"
-        preload="webview-preload.js" // Use the relative path directly
       ></webview>
     </div>
   );
