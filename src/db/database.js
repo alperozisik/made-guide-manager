@@ -8,13 +8,13 @@ const { v4: uuidv4 } = require('uuid')
 // Corrected database path
 const dbPath = path.resolve(__dirname, '..', '..', 'data', 'guide.db');
 /**
- * Function to open a new database connection and it's specific methods.
+ * Function to open a new database connection and its specific methods.
  */
 function openDatabase() {
   const connectionUUID = uuidv4();
   const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
-      console.error(`Could not connect to database - ${connectionUUID}`, err);
+      console.error(`Could not connect to database - ${connectionUUID}:`, err.message);
     } else {
       console.log(`Connected to SQLite database - ${connectionUUID}`);
     }
@@ -26,30 +26,78 @@ function openDatabase() {
   function closeDatabase() {
     db.close((err) => {
       if (err) {
-        console.error(`Error closing the database connection - ${connectionUUID}:`, err);
+        console.error(`Error closing the database connection - ${connectionUUID}:`, err.message);
       } else {
         console.log(`Database connection closed. - ${connectionUUID}`);
       }
     });
   }
 
-  // Creating a promisified function for the run method
-  function runAsync(sql, params = []) {
+  /**
+   * Function to run SQL queries with logging.
+   * Logs the SQL statement, parameters, and the result (lastID and changes).
+   */
+  async function runAsync(sql, params = []) {
+    console.log(`runAsync called - Connection UUID: ${connectionUUID}`);
+    console.log(`SQL: ${sql}`);
+    console.log(`Parameters: ${JSON.stringify(params)}`);
+
     return new Promise((resolve, reject) => {
-      db.run(sql, params, function (err) { // We preserve the 'this' context by using 'function'
+      db.run(sql, params, function (err) { // Preserve the 'this' context by using 'function'
         if (err) {
+          console.error(`Error executing runAsync - Connection UUID: ${connectionUUID}:`, err.message);
           return reject(err);
         }
+        console.log(`runAsync executed successfully - Connection UUID: ${connectionUUID}`);
+        console.log(`lastID: ${this.lastID}, changes: ${this.changes}`);
         resolve(this); // 'this' contains lastID and changes
       });
     });
   }
 
-  // A promisified function for the get method
-  const getAsync = promisify(db.get.bind(db));
+  /**
+   * Promisified function for the get method with logging.
+   * Logs the SQL statement, parameters, and the retrieved row.
+   */
+  async function getAsync(sql, params = []) {
+    console.log(`getAsync called - Connection UUID: ${connectionUUID}`);
+    console.log(`SQL: ${sql}`);
+    console.log(`Parameters: ${JSON.stringify(params)}`);
 
-  // A promisified function for the all method
-  const allAsync = promisify(db.all.bind(db));
+    return new Promise((resolve, reject) => {
+      db.get(sql, params, (err, row) => {
+        if (err) {
+          console.error(`Error executing getAsync - Connection UUID: ${connectionUUID}:`, err.message);
+          return reject(err);
+        }
+        console.log(`getAsync executed successfully - Connection UUID: ${connectionUUID}`);
+        console.log(`Retrieved Row: ${JSON.stringify(row)}`);
+        resolve(row);
+      });
+    });
+  }
+
+  /**
+   * Promisified function for the all method with logging.
+   * Logs the SQL statement, parameters, and the retrieved rows.
+   */
+  async function allAsync(sql, params = []) {
+    console.log(`allAsync called - Connection UUID: ${connectionUUID}`);
+    console.log(`SQL: ${sql}`);
+    console.log(`Parameters: ${JSON.stringify(params)}`);
+
+    return new Promise((resolve, reject) => {
+      db.all(sql, params, (err, rows) => {
+        if (err) {
+          console.error(`Error executing allAsync - Connection UUID: ${connectionUUID}:`, err.message);
+          return reject(err);
+        }
+        console.log(`allAsync executed successfully - Connection UUID: ${connectionUUID}`);
+        console.log(`Retrieved Rows: ${JSON.stringify(rows)}`);
+        resolve(rows);
+      });
+    });
+  }
 
   return { db, closeDatabase, runAsync, getAsync, allAsync };
 }
@@ -229,8 +277,8 @@ async function createNewLinkInDB(link) {
       WHERE id = ?
     `;
 
-    const copyTopics = `INSERT INTO topic_links (link, topics)
-       SELECT ?, topics FROM topic_links WHERE link = ?`
+    const copyTopics = `INSERT INTO topic_links (link, topic)
+       SELECT ?, topic FROM topic_links WHERE link = ?`
 
 
     const result = await runAsync(insertQuery, [url, name, certification ? 1 : 0, valid ? 1 : 0, successor]);
