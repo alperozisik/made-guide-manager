@@ -2,9 +2,31 @@
 
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const { promisify } = require('util');
 
 // Corrected database path
 const dbPath = path.resolve(__dirname, '..', '..', 'data', 'guide.db');
+
+function createDBMethods(db) {
+  // Creating a promisified function for the run method
+  function runAsync(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      db.run(sql, params, function (err) { // We preserve the 'this' context by using 'function'
+        if (err) {
+          return reject(err);
+        }
+        resolve(this); // 'this' contains lastID and changes
+      });
+    });
+  }
+
+  // A promisified function for the get method
+  const getAsync = promisify(db.get.bind(db));
+
+  // A promisified function for the all method
+  const allAsync = promisify(db.all.bind(db));
+  return { runAsync, getAsync, allAsync };
+}
 
 /**
  * Function to open a new database connection.
@@ -40,24 +62,22 @@ function closeDatabase(db) {
  * @param {boolean} showInvalid - Whether to include invalid links.
  * @returns {Promise<Array>} - A promise that resolves to an array of links.
  */
-function fetchLinksFromDB(showInvalid) {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
-
+async function fetchLinksFromDB(showInvalid) {
+  const db = openDatabase();
+  const { allAsync } = createDBMethods(db);
+  try {
     let query = `SELECT * FROM links`;
     if (!showInvalid) {
       query += ` WHERE Valid = 1`;
     }
-    db.all(query, [], (err, rows) => {
-      if (err) {
-        console.error('Error fetching links:', err);
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-      closeDatabase(db);
-    });
-  });
+    const rows = await allAsync(query);
+    return rows;
+  } catch (err) {
+    console.error('Error fetching links:', err);
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /**
@@ -66,24 +86,22 @@ function fetchLinksFromDB(showInvalid) {
  * @param {boolean} showInvalid - Whether to include invalid links.
  * @returns {Promise<Object>} - A promise that resolves to the link object.
  */
-function findLinkByIdInDB(id, showInvalid) {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
-
+async function findLinkByIdInDB(id, showInvalid) {
+  const db = openDatabase();
+  const { getAsync } = createDBMethods(db);
+  try {
     let query = `SELECT * FROM links WHERE Id = ?`;
     if (!showInvalid) {
       query += ` AND Valid = 1`;
     }
-    db.get(query, [id], (err, row) => {
-      if (err) {
-        console.error('Error finding link by ID:', err);
-        reject(err);
-      } else {
-        resolve(row);
-      }
-      closeDatabase(db);
-    });
-  });
+    const row = await getAsync(query, [id]);
+    return row;
+  } catch (err) {
+    console.error('Error finding link by ID:', err);
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /**
@@ -91,31 +109,24 @@ function findLinkByIdInDB(id, showInvalid) {
  * @param {Object} link - The link object with updated data.
  * @returns {Promise<void>}
  */
-function updateLinkInDB(link) {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
+async function updateLinkInDB(link) {
+  const db = openDatabase();
+  const { runAsync, } = createDBMethods(db);
 
+  try {
     const { id, URL, Name, Certification, Valid, Successor } = link;
     const query = `
         UPDATE links
         SET URL = ?, Name = ?, Certification = ?, Valid = ?, Successor = ?
         WHERE id = ?
       `;
-    db.run(
-      query,
-      [URL, Name, Certification ? 1 : 0, Valid ? 1 : 0, Successor, id],
-      function (err) {
-        if (err) {
-          console.error('Error updating link:', err);
-          closeDatabase(db);
-          reject(err);
-        } else {
-          closeDatabase(db);
-          resolve();
-        }
-      }
-    );
-  });
+    await runAsync(query, [URL, Name, Certification ? 1 : 0, Valid ? 1 : 0, Successor, id]);
+  } catch (err) {
+    console.error('Error updating link:', err);
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /**
@@ -123,25 +134,23 @@ function updateLinkInDB(link) {
  * @param {number} linkId - The ID of the link.
  * @returns {Promise<Array>} - A promise that resolves to an array of topic keys.
  */
-function fetchTopicsForLink(linkId) {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
-
+async function fetchTopicsForLink(linkId) {
+  const db = openDatabase();
+  const { allAsync } = createDBMethods(db);
+  try {
     const query = `
       SELECT topic FROM Topic_Links
       WHERE link = ?
     `;
-    db.all(query, [linkId], (err, rows) => {
-      if (err) {
-        console.error('Error fetching topics for link:', err);
-        reject(err);
-      } else {
-        const topicKeys = rows.map((row) => row.topic);
-        resolve(topicKeys);
-      }
-      closeDatabase(db);
-    });
-  });
+    const rows = await allAsync(query, [linkId]);
+    const topicKeys = rows.map((row) => row.topic);
+    return topicKeys;
+  } catch (err) {
+    console.error('Error fetching topics for link:', err);
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /**
@@ -150,70 +159,52 @@ function fetchTopicsForLink(linkId) {
  * @param {Array<string>} topicKeys - An array of topic keys.
  * @returns {Promise<void>}
  */
-function updateTopicsForLink(linkId, topicKeys) {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
+async function updateTopicsForLink(linkId, topicKeys) {
+  const db = openDatabase();
+  const { runAsync, } = createDBMethods(db);
+  try {
+    await runAsync('BEGIN TRANSACTION;');
 
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION;');
+    // Delete existing Topic_Links for the link
+    const deleteQuery = `DELETE FROM Topic_Links WHERE link = ?`;
+    await runAsync(deleteQuery, [linkId]);
 
-      // Delete existing Topic_Links for the link
-      const deleteQuery = `DELETE FROM Topic_Links WHERE link = ?`;
-      db.run(deleteQuery, [linkId], function (err) {
-        if (err) {
-          console.error('Error deleting Topic_Links:', err);
-          db.run('ROLLBACK;', [], () => {
-            closeDatabase(db);
-            reject(err);
-          });
-        } else {
-          // Yeni Topic_Links kayıtlarını ekle
-          const insertQuery = `INSERT INTO Topic_Links (topic, link) VALUES (?, ?)`;
-          const stmt = db.prepare(insertQuery);
+    // Insert new Topic_Links records
+    const insertQuery = `INSERT INTO Topic_Links (topic, link) VALUES (?, ?)`;
+    const stmt = db.prepare(insertQuery);
 
-          topicKeys.forEach((topicKey) => {
-            stmt.run([topicKey, linkId]);
-          });
+    for (const topicKey of topicKeys) {
+      await runAsync.call(stmt, [topicKey, linkId]);
+    }
 
-          stmt.finalize((err) => {
-            if (err) {
-              console.error('Error inserting Topic_Links:', err);
-              db.run('ROLLBACK;', [], () => {
-                closeDatabase(db);
-                reject(err);
-              });
-            } else {
-              db.run('COMMIT;', [], () => {
-                closeDatabase(db);
-                resolve();
-              });
-            }
-          });
-        }
-      });
-    });
-  });
+    stmt.finalize();
+    await runAsync('COMMIT;');
+  } catch (err) {
+    console.error('Error updating topics for link:', err);
+    await runAsync('ROLLBACK;');
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /**
  * Fetch all topics from the database.
  * @returns {Promise<Array>} - A promise that resolves to an array of topics.
  */
-function fetchAllTopics() {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
-
+async function fetchAllTopics() {
+  const db = openDatabase();
+  const { allAsync } = createDBMethods(db);
+  try {
     const query = `SELECT MADE, Topic FROM MADE_Topics`;
-    db.all(query, [], (err, rows) => {
-      if (err) {
-        console.error('Error fetching topics:', err);
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-      closeDatabase(db);
-    });
-  });
+    const rows = await allAsync(query);
+    return rows;
+  } catch (err) {
+    console.error('Error fetching topics:', err);
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /**
@@ -221,60 +212,39 @@ function fetchAllTopics() {
  * @param {Object} link - The link data.
  * @returns {Promise<number>} - The ID of the newly created link.
  */
-function createNewLinkInDB(link) {
-  return new Promise((resolve, reject) => {
-    const db = openDatabase();
+async function createNewLinkInDB(link) {
+  const db = openDatabase();
+  const { runAsync } = createDBMethods(db);
+  try {
+    await runAsync('BEGIN TRANSACTION;');
 
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION;');
+    const { url, name, certification, valid, successor, predecessor } = link;
+    const insertQuery = `
+      INSERT INTO links (URL, Name, Certification, Valid, Successor)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const updateOldLinkQuery = `
+      UPDATE links
+      SET Successor = ?, Valid = 0
+      WHERE id = ?
+    `;
 
-      const { url, name, certification, valid, successor, predecessor } = link;
-      const insertQuery = `
-        INSERT INTO links (URL, Name, Certification, Valid, Successor)
-        VALUES (?, ?, ?, ?, ?)
-      `;
-      const updateOldLinkQuery = `
-        UPDATE links
-        SET Successor = ?, Valid = 0
-        WHERE id = ?
-      `;
+    const result = await runAsync(insertQuery, [url, name, certification ? 1 : 0, valid ? 1 : 0, successor]);
+    const newLinkId = result.lastID;
 
-      db.run(insertQuery, [url, name, certification ? 1 : 0, valid ? 1 : 0, successor], function (err) {
-        if (err) {
-          console.error('Error creating new link:', err);
-          db.run('ROLLBACK;', [], () => {
-            closeDatabase(db);
-            reject(err);
-          });
-          return;
-        }
+    if (predecessor) {
+      await runAsync(updateOldLinkQuery, [newLinkId, predecessor]);
+    }
 
-        const newLinkId = this.lastID;
-        const commitAndResolve = () => {
-          db.run('COMMIT;', [], () => {
-            closeDatabase(db);
-            resolve(newLinkId); // Return the ID of the new link
-          });
-        }
-
-        if (predecessor) {
-          db.run(updateOldLinkQuery, [newLinkId, predecessor], function (err2) {
-            if (err2) {
-              console.error('Error updating old link:', err2);
-              db.run('ROLLBACK;', [], () => {
-                closeDatabase(db);
-                reject(err2);
-              });
-              return;
-            }
-            commitAndResolve();
-          });
-        } else {
-          commitAndResolve();
-        }
-      });
-    });
-  });
+    await runAsync('COMMIT;');
+    return newLinkId; // Return the ID of the new link
+  } catch (err) {
+    console.error('Error creating new link:', err);
+    await runAsync('ROLLBACK;');
+    throw err;
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 module.exports = {
