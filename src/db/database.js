@@ -3,11 +3,36 @@
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { promisify } = require('util');
+const { v4: uuidv4 } = require('uuid')
 
 // Corrected database path
 const dbPath = path.resolve(__dirname, '..', '..', 'data', 'guide.db');
+/**
+ * Function to open a new database connection and it's specific methods.
+ */
+function openDatabase() {
+  const connectionUUID = uuidv4();
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error(`Could not connect to database - ${connectionUUID}`, err);
+    } else {
+      console.log(`Connected to SQLite database - ${connectionUUID}`);
+    }
+  });
 
-function createDBMethods(db) {
+  /**
+   * Function to close a database connection.
+   */
+  function closeDatabase() {
+    db.close((err) => {
+      if (err) {
+        console.error(`Error closing the database connection - ${connectionUUID}:`, err);
+      } else {
+        console.log(`Database connection closed. - ${connectionUUID}`);
+      }
+    });
+  }
+
   // Creating a promisified function for the run method
   function runAsync(sql, params = []) {
     return new Promise((resolve, reject) => {
@@ -25,37 +50,11 @@ function createDBMethods(db) {
 
   // A promisified function for the all method
   const allAsync = promisify(db.all.bind(db));
-  return { runAsync, getAsync, allAsync };
+
+  return { db, closeDatabase, runAsync, getAsync, allAsync };
 }
 
-/**
- * Function to open a new database connection.
- * @returns {sqlite3.Database} - The database connection.
- */
-function openDatabase() {
-  const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      console.error('Could not connect to database', err);
-    } else {
-      console.log('Connected to SQLite database');
-    }
-  });
-  return db;
-}
 
-/**
- * Function to close a database connection.
- * @param {sqlite3.Database} db - The database connection to close.
- */
-function closeDatabase(db) {
-  db.close((err) => {
-    if (err) {
-      console.error('Error closing the database connection:', err);
-    } else {
-      console.log('Database connection closed.');
-    }
-  });
-}
 
 /**
  * Fetch links from the database.
@@ -63,8 +62,7 @@ function closeDatabase(db) {
  * @returns {Promise<Array>} - A promise that resolves to an array of links.
  */
 async function fetchLinksFromDB(showInvalid) {
-  const db = openDatabase();
-  const { allAsync } = createDBMethods(db);
+  const { closeDatabase, allAsync } = openDatabase();
   try {
     let query = `SELECT * FROM links`;
     if (!showInvalid) {
@@ -76,7 +74,7 @@ async function fetchLinksFromDB(showInvalid) {
     console.error('Error fetching links:', err);
     throw err;
   } finally {
-    closeDatabase(db);
+    closeDatabase();
   }
 }
 
@@ -87,8 +85,7 @@ async function fetchLinksFromDB(showInvalid) {
  * @returns {Promise<Object>} - A promise that resolves to the link object.
  */
 async function findLinkByIdInDB(id, showInvalid) {
-  const db = openDatabase();
-  const { getAsync } = createDBMethods(db);
+  const { closeDatabase, getAsync } = openDatabase();
   try {
     let query = `SELECT * FROM links WHERE Id = ?`;
     if (!showInvalid) {
@@ -100,7 +97,7 @@ async function findLinkByIdInDB(id, showInvalid) {
     console.error('Error finding link by ID:', err);
     throw err;
   } finally {
-    closeDatabase(db);
+    closeDatabase();
   }
 }
 
@@ -135,8 +132,7 @@ async function updateLinkInDB(link) {
  * @returns {Promise<Array>} - A promise that resolves to an array of topic keys.
  */
 async function fetchTopicsForLink(linkId) {
-  const db = openDatabase();
-  const { allAsync } = createDBMethods(db);
+  const { closeDatabase, allAsync } = openDatabase();
   try {
     const query = `
       SELECT topic FROM Topic_Links
@@ -149,7 +145,7 @@ async function fetchTopicsForLink(linkId) {
     console.error('Error fetching topics for link:', err);
     throw err;
   } finally {
-    closeDatabase(db);
+    closeDatabase();
   }
 }
 
@@ -160,8 +156,7 @@ async function fetchTopicsForLink(linkId) {
  * @returns {Promise<void>}
  */
 async function updateTopicsForLink(linkId, topicKeys) {
-  const db = openDatabase();
-  const { runAsync, } = createDBMethods(db);
+  const { db, closeDatabase, runAsync } = openDatabase();
   try {
     await runAsync('BEGIN TRANSACTION;');
 
@@ -174,7 +169,14 @@ async function updateTopicsForLink(linkId, topicKeys) {
     const stmt = db.prepare(insertQuery);
 
     for (const topicKey of topicKeys) {
-      await runAsync.call(stmt, [topicKey, linkId]);
+      await new Promise((resolve, reject) => {
+        stmt.run([topicKey, linkId], function (err) {
+          if (err) {
+        return reject(err);
+          }
+          resolve();
+        });
+      });
     }
 
     stmt.finalize();
@@ -184,7 +186,7 @@ async function updateTopicsForLink(linkId, topicKeys) {
     await runAsync('ROLLBACK;');
     throw err;
   } finally {
-    closeDatabase(db);
+    closeDatabase();
   }
 }
 
@@ -193,8 +195,7 @@ async function updateTopicsForLink(linkId, topicKeys) {
  * @returns {Promise<Array>} - A promise that resolves to an array of topics.
  */
 async function fetchAllTopics() {
-  const db = openDatabase();
-  const { allAsync } = createDBMethods(db);
+  const { closeDatabase, allAsync } = openDatabase();
   try {
     const query = `SELECT MADE, Topic FROM MADE_Topics`;
     const rows = await allAsync(query);
@@ -203,7 +204,7 @@ async function fetchAllTopics() {
     console.error('Error fetching topics:', err);
     throw err;
   } finally {
-    closeDatabase(db);
+    closeDatabase();
   }
 }
 
@@ -213,8 +214,7 @@ async function fetchAllTopics() {
  * @returns {Promise<number>} - The ID of the newly created link.
  */
 async function createNewLinkInDB(link) {
-  const db = openDatabase();
-  const { runAsync } = createDBMethods(db);
+  const { closeDatabase, runAsync } = openDatabase();
   try {
     await runAsync('BEGIN TRANSACTION;');
 
@@ -229,11 +229,16 @@ async function createNewLinkInDB(link) {
       WHERE id = ?
     `;
 
+    const copyTopics = `INSERT INTO topic_links (link, topics)
+       SELECT ?, topics FROM topic_links WHERE link = ?`
+
+
     const result = await runAsync(insertQuery, [url, name, certification ? 1 : 0, valid ? 1 : 0, successor]);
     const newLinkId = result.lastID;
 
     if (predecessor) {
       await runAsync(updateOldLinkQuery, [newLinkId, predecessor]);
+      await runAsync(copyTopics, [newLinkId, predecessor]);
     }
 
     await runAsync('COMMIT;');
@@ -243,7 +248,7 @@ async function createNewLinkInDB(link) {
     await runAsync('ROLLBACK;');
     throw err;
   } finally {
-    closeDatabase(db);
+    closeDatabase();
   }
 }
 

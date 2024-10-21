@@ -121,7 +121,9 @@ ipcMain.handle('find-link-by-id', async (event, id, showInvalid) => {
 // Handle updating a link
 ipcMain.handle('update-link', async (event, link) => {
   try {
-    await updateLinkInDB(link);
+    if (!link.topics) {
+      await updateLinkInDB(link);
+    }
     // Update topics if provided
     if (link.topics) {
       await updateTopicsForLink(link.id, link.topics);
