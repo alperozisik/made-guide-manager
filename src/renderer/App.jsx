@@ -66,7 +66,10 @@ function App() {
    * @param {Array} buttons - Buttons in modal
    */
   const showModal = (text, buttons) => {
-    setModalContent({ text, buttons });
+    let content = { text, buttons };
+    if(!text)
+      content = null;
+    setModalContent(content);
   };
 
   const closeModal = () => {
