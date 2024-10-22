@@ -116,6 +116,7 @@ async function fetchLinksFromDB(showInvalid) {
     if (!showInvalid) {
       query += ` WHERE Valid = 1`;
     }
+    query += ` ORDER BY Id`;
     const rows = await allAsync(query);
     return rows;
   } catch (err) {
