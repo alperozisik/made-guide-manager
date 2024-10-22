@@ -12,6 +12,7 @@ function App() {
   const [showInvalidLinks, setShowInvalidLinks] = useState(false);
   const [currentLink, setCurrentLink] = useState(null);
   const [modalContent, setModalContent] = useState(null);
+  const [updateCounter, setUpdateCounter] = useState(0);
   const webviewRef = useRef(null);
 
   // State for ModalInput
@@ -34,7 +35,7 @@ function App() {
         setCurrentIndex(0);
       }
     });
-  }, [showInvalidLinks]);
+  }, [showInvalidLinks, updateCounter]);
 
   useEffect(() => {
     if (links.length > 0) {
@@ -53,11 +54,22 @@ function App() {
   const updateCurrentLink = (updatedLink) => {
     setCurrentLink(updatedLink);
     // Update the link in the links array
-    setLinks((prevLinks) => {
-      const newLinks = [...prevLinks];
-      newLinks[currentIndex] = updatedLink;
-      return newLinks;
+
+    window.electronAPI.fetchLinks(showInvalidLinks).then((result) => {
+      if (result.error) {
+        console.error('Error:', result.error);
+      } else {
+        setLinks(result);
+        let index = links.findIndex((link) => link.id === updatedLink.id);
+        setCurrentIndex(index === -1 ? 0 : index);
+      }
     });
+
+    /*  setLinks((prevLinks) => {
+       const newLinks = [...prevLinks];
+       newLinks[currentIndex] = updatedLink;
+       return newLinks;
+     }); */
   };
 
   /**
@@ -67,7 +79,7 @@ function App() {
    */
   const showModal = (text, buttons) => {
     let content = { text, buttons };
-    if(!text)
+    if (!text)
       content = null;
     setModalContent(content);
   };
@@ -132,6 +144,8 @@ function App() {
         getCurrentWebViewURL={getCurrentWebViewURL}
         getCurrentWebViewTitle={getCurrentWebViewTitle}
         showModalInput={showModalInput}
+        updateCounter={updateCounter}
+        setUpdateCounter={setUpdateCounter}
       />
       {modalContent && (
         <Modal

@@ -2,7 +2,6 @@
 
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const { promisify } = require('util');
 const { v4: uuidv4 } = require('uuid')
 
 // Corrected database path
