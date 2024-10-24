@@ -180,7 +180,7 @@ async function findLinkByIdInDB(id, showInvalid) {
  * @returns {Promise<void>}
  */
 async function updateLinkInDB(link) {
-  const { runAsync, closeDatabase } = openDatabase();
+  const { db, runAsync, closeDatabase } = openDatabase();
 
   try {
     const { id, url, name, certification, valid, successor } = link;
