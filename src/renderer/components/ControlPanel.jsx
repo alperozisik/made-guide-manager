@@ -97,8 +97,9 @@ function ControlPanel({
     const trimmedUrl = urlInput.trim();
     if (trimmedUrl !== currentLink.url) {
       const updatedLink = { ...currentLink, url: trimmedUrl };
-      updateCurrentLink(updatedLink);
-      window.electronAPI.updateLink(updatedLink);
+      window.electronAPI.updateLink(updatedLink).then(() => {
+        updateCurrentLink(updatedLink);
+      });
     }
   };
 
@@ -191,8 +192,9 @@ function ControlPanel({
       ...currentLink,
       url: getCurrentWebViewURL(),
     };
-    updateCurrentLink(updatedLink);
-    window.electronAPI.updateLink(updatedLink);
+    window.electronAPI.updateLink(updatedLink).then(() => {
+      updateCurrentLink(updatedLink);
+    });
   };
 
   /**
@@ -206,8 +208,9 @@ function ControlPanel({
     const trimmedName = nameInput.trim();
     if (trimmedName !== currentLink.name) {
       const updatedLink = { ...currentLink, name: trimmedName };
-      updateCurrentLink(updatedLink);
-      window.electronAPI.updateLink(updatedLink);
+      window.electronAPI.updateLink(updatedLink).then(() => {
+        updateCurrentLink(updatedLink);
+      });
     }
   };
 
@@ -217,8 +220,9 @@ function ControlPanel({
   const handleCertificationChange = (e) => {
     setCertification(e.target.checked);
     const updatedLink = { ...currentLink, certification: e.target.checked ? 1 : 0 };
-    updateCurrentLink(updatedLink);
-    window.electronAPI.updateLink(updatedLink);
+    window.electronAPI.updateLink(updatedLink).then(() => {
+      updateCurrentLink(updatedLink);
+    });
   };
 
   /**
@@ -232,8 +236,9 @@ function ControlPanel({
         ...currentLink,
         successor: value ? parseInt(value) : null,
       };
-      updateCurrentLink(updatedLink);
-      window.electronAPI.updateLink(updatedLink);
+      window.electronAPI.updateLink(updatedLink).then(() => {
+        updateCurrentLink(updatedLink);
+      });
     } else {
       // Invalid input, revert to last valid value
       setSuccessorInput(currentLink.successor ? currentLink.successor.toString() : '');
@@ -256,8 +261,9 @@ function ControlPanel({
 
     // Update link in database
     const updatedLink = { ...currentLink, topics: updatedTopics };
-    updateCurrentLink(updatedLink);
-    window.electronAPI.updateLink(updatedLink);
+    window.electronAPI.updateLink(updatedLink).then(() => {
+      updateCurrentLink(updatedLink);
+    });
   };
 
   const handlePersonaChange = (personaKey) => {
@@ -273,8 +279,9 @@ function ControlPanel({
 
     // Update link in database
     const updatedLink = { ...currentLink, personas: updatedPersonas };
-    updateCurrentLink(updatedLink);
-    window.electronAPI.updateLink(updatedLink);
+    window.electronAPI.updateLink(updatedLink).then(() => {
+      updateCurrentLink(updatedLink);
+    });
   };
 
 
@@ -285,8 +292,9 @@ function ControlPanel({
   const handleValidToggle = () => {
     const newValidStatus = currentLink.valid ? 0 : 1;
     const updatedLink = { ...currentLink, valid: newValidStatus };
-    updateCurrentLink(updatedLink);
-    window.electronAPI.updateLink(updatedLink);
+    window.electronAPI.updateLink(updatedLink).then(() => {
+      updateCurrentLink(updatedLink);
+    });
 
     // If the link was invalidated and showInvalidLinks is false, enable it
     if (newValidStatus === 0 && !showInvalidLinks) {

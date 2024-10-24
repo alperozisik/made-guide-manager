@@ -285,7 +285,7 @@ async function updatePersonasForLink({ db, runAsync, linkId, personaKeys }) {
 
     for (const personaKey of personaKeys) {
       await new Promise((resolve, reject) => {
-        stmt.run([personaKey, linkId], function (err) {
+        stmt.run([linkId, personaKey], function (err) {
           if (err) {
             return reject(err);
           }
