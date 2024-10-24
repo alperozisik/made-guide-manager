@@ -23,8 +23,10 @@ function ControlPanel({
   const [successorInput, setSuccessorInput] = useState('');
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [allTopics, setAllTopics] = useState([]);
+  const [allPersonas, setAllPersonas] = useState([]);
+  const [selectedPersonas, setSelectedPersonas] = useState([]);
 
-  // Fetch all topics on component mount
+  // Fetch all topics & personas on component mount
   useEffect(() => {
     window.electronAPI.fetchAllTopics().then((response) => {
       if (Array.isArray(response)) {
@@ -32,6 +34,15 @@ function ControlPanel({
       } else {
         console.error('Unexpected response:', response);
         setAllTopics([]);
+      }
+    });
+
+    window.electronAPI.fetchAllPersonas().then((response) => {
+      if (Array.isArray(response)) {
+        setAllPersonas(response);
+      } else {
+        console.error('Unexpected response:', response);
+        setAllPersonas([]);
       }
     });
   }, []);
@@ -45,6 +56,7 @@ function ControlPanel({
       setCertification(!!currentLink.certification);
       setSuccessorInput(currentLink.successor ? currentLink.successor.toString() : '');
       setSelectedTopics(currentLink.topics || []);
+      setSelectedPersonas(currentLink.personas || []);
     }
   }, [currentLink]);
 
@@ -157,7 +169,7 @@ function ControlPanel({
       valid: 1,
       predecessor: currentLink.id,
     };
-    
+
     window.electronAPI.createLink(newLink).then((createdLink) => {
       // Add new link to the list and update state
       if (createdLink.error) {
@@ -247,6 +259,25 @@ function ControlPanel({
     updateCurrentLink(updatedLink);
     window.electronAPI.updateLink(updatedLink);
   };
+
+  const handlePersonaChange = (personaKey) => {
+    let updatedPersonas;
+    if (selectedPersonas.includes(personaKey)) {
+      // Remove topic
+      updatedPersonas = selectedPersonas.filter((key) => key !== personaKey);
+    } else {
+      // Add topic
+      updatedPersonas = [...selectedPersonas, personaKey];
+    }
+    setSelectedPersonas(updatedPersonas);
+
+    // Update link in database
+    const updatedLink = { ...currentLink, personas: updatedPersonas };
+    updateCurrentLink(updatedLink);
+    window.electronAPI.updateLink(updatedLink);
+  };
+
+
 
   /**
    * Handle Valid status toggle.
@@ -362,6 +393,29 @@ function ControlPanel({
             ))
           ) : (
             <p>No topics available.</p>
+          )}
+        </div>
+      </div>
+
+      {/* 10. Link Persona List */}
+      <div className="control-item">
+        <label>Personas</label>
+        <div className="persona-list">
+          {Array.isArray(allPersonas) && allPersonas.length > 0 ? (
+            allPersonas.map((persona) => (
+              <div key={persona.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={selectedPersonas.includes(persona.id)}
+                    onChange={() => handlePersonaChange(persona.id)}
+                  />
+                  {persona.persona}
+                </label>
+              </div>
+            ))
+          ) : (
+            <p>No personas available.</p>
           )}
         </div>
       </div>

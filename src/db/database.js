@@ -111,13 +111,38 @@ function openDatabase() {
 async function fetchLinksFromDB(showInvalid) {
   const { closeDatabase, allAsync } = openDatabase();
   try {
-    let query = `SELECT * FROM links`;
+    let tableSourceName = showInvalid ? 'links' : 'current_links';
+    let queryLinks = `SELECT * FROM ${tableSourceName}  ORDER BY Id`;
+    let subTableLinks = `SELECT id FROM ${tableSourceName}  ORDER BY Id`;
+
+    let queryLinkTopics = `SELECT * FROM topic_links`
+    let queryLinkPersonas = `SELECT * FROM persona_links`;
+
     if (!showInvalid) {
-      query += ` WHERE Valid = 1`;
+      queryLinkTopics += ` WHERE link IN (${subTableLinks});`;
+      queryLinkPersonas += ` WHERE link_id IN (${subTableLinks});`;
     }
-    query += ` ORDER BY Id`;
-    const rows = await allAsync(query);
-    return rows;
+
+    const linkRows = await allAsync(queryLinks);
+    const linkTopicRows = await allAsync(queryLinkTopics);
+    const linkPersonaRows = await allAsync(queryLinkPersonas);
+
+    const linkMap = {};
+    linkRows.forEach((link) => {
+      link.topics = [];
+      link.personas = [];
+      linkMap[link.id] = link;
+    });
+    linkTopicRows.forEach((linkTopic) => {
+      linkMap[linkTopic.Link].topics.push(linkTopic.Topic);
+    });
+
+    linkPersonaRows.forEach((linkPersona) => {
+      linkMap[linkPersona.link_id].personas.push(linkPersona.persona_id);
+    });
+
+
+    return linkRows;
   } catch (err) {
     console.error('Error fetching links:', err);
     throw err;
@@ -155,17 +180,20 @@ async function findLinkByIdInDB(id, showInvalid) {
  * @returns {Promise<void>}
  */
 async function updateLinkInDB(link) {
-  const db = openDatabase();
-  const { runAsync, } = createDBMethods(db);
+  const { runAsync, closeDatabase } = openDatabase();
 
   try {
-    const { id, URL, Name, Certification, Valid, Successor } = link;
+    const { id, url, name, certification, valid, successor } = link;
     const query = `
         UPDATE links
         SET URL = ?, Name = ?, Certification = ?, Valid = ?, Successor = ?
         WHERE id = ?
       `;
-    await runAsync(query, [URL, Name, Certification ? 1 : 0, Valid ? 1 : 0, Successor, id]);
+    await runAsync('BEGIN TRANSACTION;');
+    await runAsync(query, [url, name, certification ? 1 : 0, valid ? 1 : 0, successor, id]);
+    await updateTopicsForLink({ db, runAsync, linkId: id, topicKeys: link.topics });
+    await updatePersonasForLink({ db, runAsync, linkId: id, personaKeys: link.personas });
+    await runAsync('COMMIT;');
   } catch (err) {
     console.error('Error updating link:', err);
     throw err;
@@ -203,24 +231,23 @@ async function fetchTopicsForLink(linkId) {
  * @param {Array<string>} topicKeys - An array of topic keys.
  * @returns {Promise<void>}
  */
-async function updateTopicsForLink(linkId, topicKeys) {
-  const { db, closeDatabase, runAsync } = openDatabase();
+async function updateTopicsForLink({ db, runAsync, linkId, topicKeys }) {
   try {
-    await runAsync('BEGIN TRANSACTION;');
+    /* await runAsync('BEGIN TRANSACTION;'); */
 
     // Delete existing Topic_Links for the link
     const deleteQuery = `DELETE FROM Topic_Links WHERE link = ?`;
     await runAsync(deleteQuery, [linkId]);
 
     // Insert new Topic_Links records
-    const insertQuery = `INSERT INTO Topic_Links (topic, link) VALUES (?, ?)`;
+    const insertQuery = `INSERT OR IGNORE INTO Topic_Links (topic, link) VALUES (?, ?)`;
     const stmt = db.prepare(insertQuery);
 
     for (const topicKey of topicKeys) {
       await new Promise((resolve, reject) => {
         stmt.run([topicKey, linkId], function (err) {
           if (err) {
-        return reject(err);
+            return reject(err);
           }
           resolve();
         });
@@ -228,13 +255,53 @@ async function updateTopicsForLink(linkId, topicKeys) {
     }
 
     stmt.finalize();
-    await runAsync('COMMIT;');
+    /* await runAsync('COMMIT;'); */
   } catch (err) {
     console.error('Error updating topics for link:', err);
-    await runAsync('ROLLBACK;');
+    /* await runAsync('ROLLBACK;'); */
     throw err;
   } finally {
-    closeDatabase();
+    /* closeDatabase(); */
+  }
+}
+
+/**
+ * Update personas associated with a link.
+ * @param {number} linkId - The ID of the link.
+ * @param {Array<string>} linkKeys - An array of topic keys.
+ * @returns {Promise<void>}
+ */
+async function updatePersonasForLink({ db, runAsync, linkId, personaKeys }) {
+  try {
+    /* await runAsync('BEGIN TRANSACTION;'); */
+
+    // Delete existing persona links for the link
+    const deleteQuery = `DELETE FROM persona_links WHERE link_id = ?`;
+    await runAsync(deleteQuery, [linkId]);
+
+    // Insert new persona_links records
+    const insertQuery = `INSERT OR IGNORE INTO persona_links (link_id, persona_id) VALUES (?, ?)`;
+    const stmt = db.prepare(insertQuery);
+
+    for (const personaKey of personaKeys) {
+      await new Promise((resolve, reject) => {
+        stmt.run([personaKey, linkId], function (err) {
+          if (err) {
+            return reject(err);
+          }
+          resolve();
+        });
+      });
+    }
+
+    stmt.finalize();
+    /* await runAsync('COMMIT;'); */
+  } catch (err) {
+    console.error('Error updating personas for link:', err);
+    /* await runAsync('ROLLBACK;') */;
+    throw err;
+  } finally {
+    /* closeDatabase(); */
   }
 }
 
@@ -250,6 +317,24 @@ async function fetchAllTopics() {
     return rows;
   } catch (err) {
     console.error('Error fetching topics:', err);
+    throw err;
+  } finally {
+    closeDatabase();
+  }
+}
+
+/**
+ * Fetch all personas from the database.
+ * @returns {Promise<Array>} - A promise that resolves to an array of topics.
+ */
+async function fetchAllPersonas() {
+  const { closeDatabase, allAsync } = openDatabase();
+  try {
+    const query = `SELECT * FROM personas`;
+    const rows = await allAsync(query);
+    return rows;
+  } catch (err) {
+    console.error('Error fetching personas:', err);
     throw err;
   } finally {
     closeDatabase();
@@ -300,12 +385,14 @@ async function createNewLinkInDB(link) {
   }
 }
 
+
+
 module.exports = {
   fetchLinksFromDB,
   findLinkByIdInDB,
   updateLinkInDB,
   fetchTopicsForLink,
-  updateTopicsForLink,
   fetchAllTopics,
   createNewLinkInDB,
+  fetchAllPersonas,
 };

@@ -6,9 +6,9 @@ const {
   findLinkByIdInDB,
   updateLinkInDB,
   fetchTopicsForLink,
-  updateTopicsForLink,
   fetchAllTopics,
   createNewLinkInDB,
+  fetchAllPersonas,
 } = require('./db/database');
 
 let mainWindow;
@@ -86,7 +86,7 @@ ipcMain.handle('fetch-links', async (event, showInvalid) => {
   try {
     const links = await fetchLinksFromDB(showInvalid);
 
-    // For each link, fetch associated topics
+   /*  // For each link, fetch associated topics
     const linksWithTopics = await Promise.all(
       links.map(async (link) => {
         const topics = await fetchTopicsForLink(link.id);
@@ -94,7 +94,8 @@ ipcMain.handle('fetch-links', async (event, showInvalid) => {
       })
     );
 
-    return linksWithTopics;
+    return linksWithTopics; */
+    return links;
   } catch (error) {
     console.error('Error in fetch-links:', error);
     return { error: error.message };
@@ -121,13 +122,13 @@ ipcMain.handle('find-link-by-id', async (event, id, showInvalid) => {
 // Handle updating a link
 ipcMain.handle('update-link', async (event, link) => {
   try {
-    if (!link.topics) {
+    /* if (!link.topics) { */
       await updateLinkInDB(link);
-    }
+   /*  } */
     // Update topics if provided
-    if (link.topics) {
+/*     if (link.topics) {
       await updateTopicsForLink(link.id, link.topics);
-    }
+    } */
     return { success: true };
   } catch (error) {
     console.error('Error in update-link:', error);
@@ -142,6 +143,17 @@ ipcMain.handle('fetch-all-topics', async () => {
     return topics;
   } catch (error) {
     console.error('Error in fetch-all-topics:', error);
+    return { error: error.message };
+  }
+});
+
+// Handle fetching all topics
+ipcMain.handle('fetch-all-personas', async () => {
+  try {
+    const personas = await fetchAllPersonas();
+    return personas;
+  } catch (error) {
+    console.error('Error in fetch-all-personas:', error);
     return { error: error.message };
   }
 });

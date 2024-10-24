@@ -38,6 +38,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   /**
+   * Fetch all personas from the database.
+   */
+  fetchAllPersonas: async () => {
+    return await ipcRenderer.invoke('fetch-all-personas');
+  },
+
+  /**
    * Create a new link in the database.
    * @param {Object} link - The new link data.
    */
