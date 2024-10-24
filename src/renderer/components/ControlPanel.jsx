@@ -291,6 +291,21 @@ function ControlPanel({
    */
   const handleValidToggle = () => {
     const newValidStatus = currentLink.valid ? 0 : 1;
+    showModal("Would you like to turn this link to " + (newValidStatus ? "valid" : "invalid") + " ?", 
+    [
+      {
+        text: (newValidStatus ? "Valid" : "Invalid"),
+        action: () => toggleValid(newValidStatus),
+        closeOnClick: true,
+      },
+      {
+        text: 'Cancel',
+        closeOnClick: true,
+      },
+    ]);
+  };
+
+  const toggleValid = (newValidStatus) => {  
     const updatedLink = { ...currentLink, valid: newValidStatus };
     window.electronAPI.updateLink(updatedLink).then(() => {
       updateCurrentLink(updatedLink);
