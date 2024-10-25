@@ -32,7 +32,8 @@ function App() {
         console.error('Error:', result.error);
       } else {
         setLinks(result);
-        setCurrentIndex(0);
+        let index = (currentLink && result.findIndex((link) => link.id === currentLink.id)) || -1;
+        setCurrentIndex(index === -1 ? 0 : index);
       }
     });
   }, [showInvalidLinks, updateCounter]);
