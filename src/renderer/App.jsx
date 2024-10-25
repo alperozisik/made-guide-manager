@@ -56,7 +56,7 @@ function App() {
     setCurrentLink(updatedLink);
     // Update the link in the links array
 
-    window.electronAPI.fetchLinks(showInvalidLinks).then((result) => {
+    return window.electronAPI.fetchLinks(showInvalidLinks).then((result) => {
       if (result.error) {
         console.error('Error:', result.error);
       } else {
@@ -64,6 +64,7 @@ function App() {
         let index = links.findIndex((link) => link.id === updatedLink.id);
         setCurrentIndex(index === -1 ? 0 : index);
       }
+      return result;
     });
 
     /*  setLinks((prevLinks) => {

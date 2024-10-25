@@ -177,8 +177,9 @@ function ControlPanel({
         alert(createdLink.error);
         return;
       }
-      updateCurrentLink(createdLink);
-      onLinkChange(links.length); // Set to new index
+      updateCurrentLink(createdLink).then(() => { 
+        onLinkChange(links.length -1); // Set to new index
+      });
     });
 
   };
