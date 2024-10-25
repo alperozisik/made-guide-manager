@@ -312,9 +312,9 @@ function ControlPanel({
     });
 
     // If the link was invalidated and showInvalidLinks is false, enable it
-    if (newValidStatus === 0 && !showInvalidLinks) {
+    /* if (newValidStatus === 0 && !showInvalidLinks) {
       onShowInvalidLinksChange(true);
-    }
+    } */
   };
 
   /**
