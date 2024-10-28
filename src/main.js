@@ -2,6 +2,7 @@
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { createAppMenu } = require('./menu');
+
 const {
   fetchLinksFromDB,
   findLinkByIdInDB,
@@ -166,10 +167,10 @@ ipcMain.handle('create-link', async (event, link) => {
   try {
     const newLinkId = await createNewLinkInDB(link);
     // Fetch the newly created link
-/*     const newLink = await findLinkByIdInDB(newLinkId, true);
-    // Fetch topics associated with the new link
-    const topics = await fetchTopicsForLink(newLinkId);
-    newLink.topics = topics; */
+    /*     const newLink = await findLinkByIdInDB(newLinkId, true);
+        // Fetch topics associated with the new link
+        const topics = await fetchTopicsForLink(newLinkId);
+        newLink.topics = topics; */
     return newLinkId;
   }
   catch (error) {
