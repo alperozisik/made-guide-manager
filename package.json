@@ -5,10 +5,50 @@
   "main": "src/main.js",
   "scripts": {
     "start": "npm run build && electron .",
-    "build": "webpack",
+    "compile": "webpack",
+    "build:win": "npm run compile && electron-builder --config build-win.json",
+    "build:mac": "npm run compile && electron-builder --config build-mac.json",
     "dev": "cross-env NODE_ENV=development webpack serve",
     "electron:debug": "wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
     "debug": "concurrently \"npm run dev\" \"npm run electron:debug\""
+  },
+  "build": {
+    "appId": "com.oracle.emea-anc.made-guide-manager",
+    "productName": "MADE Guide Manager",
+    "files": [
+      "dist/**/*",
+      "src/main.js",
+      "src/menu.js",
+      "src/db/database.js",
+      "src/preload/preload.js",
+      "src/renderer/**/*",
+      "data/**/*",
+      "node_modules/**/*",
+      "!**/*.map",
+      "!**/tests",
+      "!**/*.md"
+    ],
+    "directories": {
+      "buildResources": "data"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "global": "^4.4.0",
@@ -28,6 +68,7 @@
     "cross-env": "^7.0.3",
     "css-loader": "^7.1.2",
     "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
     "html-webpack-plugin": "^5.6.0",
     "node-polyfill-webpack-plugin": "^4.0.0",
     "style-loader": "^4.0.0",
