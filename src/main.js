@@ -1,6 +1,7 @@
 // src/main.js
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
+const { createAppMenu } = require('./menu');
 const {
   fetchLinksFromDB,
   findLinkByIdInDB,
@@ -44,6 +45,8 @@ function createWindow() {
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
+
+  createAppMenu(mainWindow);
 }
 
 /**
@@ -86,15 +89,15 @@ ipcMain.handle('fetch-links', async (event, showInvalid) => {
   try {
     const links = await fetchLinksFromDB(showInvalid);
 
-   /*  // For each link, fetch associated topics
-    const linksWithTopics = await Promise.all(
-      links.map(async (link) => {
-        const topics = await fetchTopicsForLink(link.id);
-        return { ...link, topics };
-      })
-    );
-
-    return linksWithTopics; */
+    /*  // For each link, fetch associated topics
+     const linksWithTopics = await Promise.all(
+       links.map(async (link) => {
+         const topics = await fetchTopicsForLink(link.id);
+         return { ...link, topics };
+       })
+     );
+ 
+     return linksWithTopics; */
     return links;
   } catch (error) {
     console.error('Error in fetch-links:', error);
@@ -123,12 +126,12 @@ ipcMain.handle('find-link-by-id', async (event, id, showInvalid) => {
 ipcMain.handle('update-link', async (event, link) => {
   try {
     /* if (!link.topics) { */
-      await updateLinkInDB(link);
-   /*  } */
+    await updateLinkInDB(link);
+    /*  } */
     // Update topics if provided
-/*     if (link.topics) {
-      await updateTopicsForLink(link.id, link.topics);
-    } */
+    /*     if (link.topics) {
+          await updateTopicsForLink(link.id, link.topics);
+        } */
     return { success: true };
   } catch (error) {
     console.error('Error in update-link:', error);
@@ -163,12 +166,13 @@ ipcMain.handle('create-link', async (event, link) => {
   try {
     const newLinkId = await createNewLinkInDB(link);
     // Fetch the newly created link
-    const newLink = await findLinkByIdInDB(newLinkId, true);
+/*     const newLink = await findLinkByIdInDB(newLinkId, true);
     // Fetch topics associated with the new link
     const topics = await fetchTopicsForLink(newLinkId);
-    newLink.topics = topics;
-    return newLink;
-  } catch (error) {
+    newLink.topics = topics; */
+    return newLinkId;
+  }
+  catch (error) {
     console.error('Error in create-link:', error);
     return { error: error.message };
   }

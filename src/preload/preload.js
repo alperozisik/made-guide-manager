@@ -51,4 +51,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createLink: async (link) => {
     return await ipcRenderer.invoke('create-link', link);
   },
+
+  onOpenNewLinkModal: (callback) => ipcRenderer.on('open-new-link-modal', callback),
 });

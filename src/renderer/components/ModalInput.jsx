@@ -1,12 +1,12 @@
 // src/renderer/components/ModalInput.jsx
 
 import React, { useState, useEffect } from 'react';
-import './ModalInput.css'; // Stil dosyasını oluşturmayı unutmayın
+import './ModalInput.css'; // Don't forget to create the style file
 
 function ModalInput({ title, message, suggestion, onOK, onCancel }) {
   const [inputValue, setInputValue] = useState(suggestion || '');
 
-  // Klavye olaylarını dinleme
+  // listen to keyboard events
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Enter') {
@@ -18,7 +18,7 @@ function ModalInput({ title, message, suggestion, onOK, onCancel }) {
 
     window.addEventListener('keydown', handleKeyDown);
 
-    // Temizleme
+    // cleanup
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };

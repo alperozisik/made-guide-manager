@@ -4,6 +4,7 @@ import WebView from './components/WebView';
 import ControlPanel from './components/ControlPanel';
 import Modal from './components/Modal';
 import ModalInput from './components/ModalInput';
+import ModalNewLink from './components/ModalNewLink';
 import './App.css';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const [showInvalidLinks, setShowInvalidLinks] = useState(false);
   const [currentLink, setCurrentLink] = useState(null);
   const [modalContent, setModalContent] = useState(null);
+  const [modalNewLinkOpen, setModalNewLinkOpen] = useState(false);
   const [updateCounter, setUpdateCounter] = useState(0);
   const webviewRef = useRef(null);
 
@@ -26,8 +28,18 @@ function App() {
   });
 
   useEffect(() => {
+    window.electronAPI.onOpenNewLinkModal(() => {
+      setModalNewLinkOpen(true);
+    });
+  }, []);
+
+  useEffect(() => {
     // Fetch initial links
-    window.electronAPI.fetchLinks(showInvalidLinks).then((result) => {
+    fetchAllLinks();
+  }, [showInvalidLinks, updateCounter]);
+
+  const fetchAllLinks = () => {
+    return window.electronAPI.fetchLinks(showInvalidLinks).then((result) => {
       if (result.error) {
         console.error('Error:', result.error);
       } else {
@@ -35,8 +47,9 @@ function App() {
         let index = (currentLink && result.findIndex((link) => link.id === currentLink.id)) || -1;
         setCurrentIndex(index === -1 ? 0 : index);
       }
+      return result;
     });
-  }, [showInvalidLinks, updateCounter]);
+  };
 
   useEffect(() => {
     if (links.length > 0) {
@@ -128,6 +141,23 @@ function App() {
     return '';
   };
 
+  const handleNewLink = (newLink) => {
+    window.electronAPI.createLink(newLink).then((linkId) => {
+      fetchAllLinks().then((result) => {
+        if (!result.error) {
+          const index = result.findIndex((link) => link.id === linkId);
+          setCurrentIndex(index === -1 ? 0 : index);
+        }
+        return result;
+      });
+    });
+    setModalNewLinkOpen(false);
+  };
+
+  const handleNewLinkCancel = () => {
+    setModalNewLinkOpen(false);
+  };
+
   return (
     <div className="app-container">
       <WebView
@@ -176,6 +206,11 @@ function App() {
           }}
         />
       )}
+      {modalNewLinkOpen && (
+        <ModalNewLink
+          onOK={handleNewLink}
+          onCancel={handleNewLinkCancel}
+        />)}
     </div>
   );
 }
