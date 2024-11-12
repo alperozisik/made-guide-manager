@@ -177,7 +177,10 @@ function ControlPanel({
         alert(createdLink.error);
         return;
       }
-      updateCurrentLink(createdLink).then(() => { 
+      if (typeof createdLink.id !== 'number') {
+        newLink.id = createdLink;
+      }
+      updateCurrentLink(newLink).then(() => { 
         onLinkChange(links.length -1); // Set to new index
       });
     });
