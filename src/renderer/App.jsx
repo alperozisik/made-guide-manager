@@ -236,6 +236,8 @@ function App() {
           onClose={() => setIsListLinksModalOpen(false)}
           onSelect={handleLinkSelect}
           links={links}
+          showInvalidLinks={showInvalidLinks}
+          onShowInvalidLinksChange={handleShowInvalidLinksChange}
         />
       )}
     </div>

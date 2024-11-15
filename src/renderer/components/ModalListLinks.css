@@ -1,4 +1,6 @@
 /* src/renderer/components/ModalListLinks.css */
+
+/* Modal Overlay */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -6,69 +8,140 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-  }
-  
-  .modal-list-links {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 600px;
-    max-height: 80%;
-    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content */
+.modal-list-links {
     background-color: #fff;
+    width: 900px;
+    height: 80vh;
+    /* Fixed height at 80% of the viewport height */
+    max-height: 800px;
+    /* Optional maximum height */
     display: flex;
     flex-direction: column;
-  }
-  
-  .modal-header {
+}
+
+/* Modal Header */
+.modal-header {
     display: flex;
     align-items: center;
     padding: 10px;
     background-color: #f0f0f0;
-  }
-  
-  .modal-header h2 {
+}
+
+.modal-header h2 {
     flex-grow: 1;
     margin: 0;
-  }
-  
-  .close-button {
+}
+
+.close-button {
     background: none;
     border: none;
     font-size: 24px;
     cursor: pointer;
-  }
-  
-  .modal-body {
+}
+
+/* Modal Body */
+.modal-body {
     padding: 10px;
     display: flex;
     flex-direction: column;
-  }
-  
-  .modal-body input[type="text"] {
+    flex-grow: 1;
+    /* Allows the modal body to fill the remaining space */
+    overflow: hidden;
+    /* Prevents content overflow */
+}
+
+.modal-controls {
+    display: flex;
+    align-items: center;
     margin-bottom: 10px;
+}
+
+.modal-controls input[type="text"] {
+    flex-grow: 1;
     padding: 5px;
     font-size: 16px;
-  }
-  
-  .table-container {
+}
+
+.show-invalid-checkbox {
+    margin-left: 10px;
+    font-size: 16px;
+}
+
+.show-invalid-checkbox input {
+    margin-right: 5px;
+}
+
+/* Table Container */
+.table-container {
     flex-grow: 1;
     overflow-y: auto;
-  }
-  
-  .links-table {
+}
+
+/* Table Styles */
+.links-table {
     width: 100%;
     border-collapse: collapse;
-  }
-  
-  .links-table th,
-  .links-table td {
+    table-layout: fixed;
+}
+
+.links-table th,
+.links-table td {
     padding: 8px;
     text-align: left;
     border-bottom: 1px solid #ddd;
-  }
-  
-  .links-table tr:hover {
+    white-space: nowrap;
+    /* Prevent text from wrapping */
+}
+
+.links-table th {
+    cursor: pointer;
+    user-select: none;
+    background-color: #f9f9f9;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.links-table th:hover {
+    background-color: #e0e0e0;
+}
+
+.links-table tr:hover {
     background-color: #f1f1f1;
     cursor: pointer;
-  }
+}
+
+/* Prevent Overscroll */
+.links-table tbody {
+    display: block;
+}
+
+.links-table thead,
+.links-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.links-table th.id-column,
+.links-table td.id-column {
+    width: 35px;
+    max-width: 35px;
+    min-width: 35px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.links-table th.name-column,
+.links-table td.name-column {
+    width: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
