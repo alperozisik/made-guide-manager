@@ -5,6 +5,7 @@ import ControlPanel from './components/ControlPanel';
 import Modal from './components/Modal';
 import ModalInput from './components/ModalInput';
 import ModalNewLink from './components/ModalNewLink';
+import ModalListLinks from './components/ModalListLinks';
 import './App.css';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   const [modalNewLinkOpen, setModalNewLinkOpen] = useState(false);
   const [updateCounter, setUpdateCounter] = useState(0);
   const webviewRef = useRef(null);
+  const [isListLinksModalOpen, setIsListLinksModalOpen] = useState(false);
 
   // State for ModalInput
   const [isModalInputOpen, setIsModalInputOpen] = useState(false);
@@ -31,6 +33,16 @@ function App() {
     window.electronAPI.onOpenNewLinkModal(() => {
       setModalNewLinkOpen(true);
     });
+
+    window.electronAPI.onOpenListLinksModal(() => {
+      setIsListLinksModalOpen(true);
+    });
+
+    return () => {
+      // Clean up the IPC listener when the component unmounts
+      window.electronAPI.onOpenListLinksModal(null);
+    };
+
   }, []);
 
   useEffect(() => {
@@ -59,6 +71,14 @@ function App() {
 
   const handleLinkChange = (index) => {
     setCurrentIndex(index);
+  };
+
+  // Function to handle when a link is selected from the modal
+  const handleLinkSelect = (linkId) => {
+    // Assuming you have a function to focus on a link by ID
+    const index = links.findIndex((link) => link.id === linkId);
+    setCurrentIndex(index === -1 ? 0 : index);
+    setIsListLinksModalOpen(false);
   };
 
   const handleShowInvalidLinksChange = (value) => {
@@ -211,6 +231,13 @@ function App() {
           onOK={handleNewLink}
           onCancel={handleNewLinkCancel}
         />)}
+      {isListLinksModalOpen && (
+        <ModalListLinks
+          onClose={() => setIsListLinksModalOpen(false)}
+          onSelect={handleLinkSelect}
+          links={links}
+        />
+      )}
     </div>
   );
 }

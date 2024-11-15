@@ -53,4 +53,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   onOpenNewLinkModal: (callback) => ipcRenderer.on('open-new-link-modal', callback),
+  onOpenListLinksModal: (callback) => ipcRenderer.on('open-list-links-modal', callback),
 });

@@ -38,6 +38,15 @@ function createAppMenu(mainWindow) {
                     }
                 },
                 {
+                    label: 'List Links',
+                    accelerator: 'CmdOrCtrl+L',
+                    click: () => {
+                        if (mainWindow) {
+                            mainWindow.webContents.send('open-list-links-modal');
+                        }
+                    }
+                },
+                {
                     label: 'Export Data',
                     accelerator: 'CmdOrCtrl+E',
                     click: () => {
