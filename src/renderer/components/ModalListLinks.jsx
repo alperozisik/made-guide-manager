@@ -1,11 +1,39 @@
 // src/renderer/components/ModalListLinks.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import './ModalListLinks.css';
 
 function ModalListLinks({ onClose, onSelect, links, showInvalidLinks, onShowInvalidLinksChange }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortColumn, setSortColumn] = useState('id'); // Default sort column is 'id'
     const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
+
+    // Reference to the search input element
+    const searchInputRef = useRef(null);
+
+    // Focus the search input when the modal opens
+    useEffect(() => {
+        if (searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, []);
+
+    // Handle keydown events to close modal on ESC key press
+    useEffect(() => {
+        // Function to handle keydown events
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        // Add event listener to the document
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Cleanup event listener on component unmount
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onClose]);
 
     // Function to handle sorting
     const handleSort = (column) => {
@@ -56,6 +84,7 @@ function ModalListLinks({ onClose, onSelect, links, showInvalidLinks, onShowInva
                             placeholder="Search links..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            ref={searchInputRef} // Attach the ref to the input element
                         />
                         <label className="show-invalid-checkbox">
                             <input
