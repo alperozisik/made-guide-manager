@@ -1,6 +1,6 @@
 // menu.js
 const { Menu, dialog } = require('electron');
-const { fetchLinksFromDB, fetchAllPersonas, fetchAllTopics } = require('./db/database');
+const { fetchLinksFromDB, fetchAllPersonas, fetchAllTopics, fetchSuccessorList } = require('./db/database');
 const { link } = require('fs');
 const fs = require('fs').promises; // Promisified fs module
 
@@ -153,19 +153,21 @@ function createAppMenu(mainWindow) {
             const data = await Promise.all([
                 fetchLinksFromDB(false),
                 fetchAllTopics(),
-                fetchAllPersonas()
+                fetchAllPersonas(),
+                fetchSuccessorList(),
             ]);
 
             const fileData = {
                 links: data[0],
                 topics: data[1],
-                personas: data[2]
+                personas: data[2],
+                successors: data[3],
             }
 
             // Convert data to formatted JSON
             const jsonData = JSON.stringify(fileData, null, 2);
 
-            // JSON verisini seçilen dosyaya yazma
+            // Write data to file
             await fs.writeFile(filePath, jsonData, 'utf8');
 
             // Send success message

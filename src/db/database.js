@@ -387,6 +387,51 @@ async function createNewLinkInDB(link) {
 
 
 
+/**
+ * Fetch successor links from the database.
+ * @returns {Promise<Array>} - A promise that resolves to an array of links.
+ */
+async function fetchSuccessorList() {
+  const { closeDatabase, allAsync } = openDatabase();
+  try {
+    const querySuccessors = `
+      WITH RECURSIVE successor_chain(id, final_successor) AS (
+        -- Base case: select links that have a successor
+        SELECT id, successor AS final_successor
+        FROM links
+        WHERE successor IS NOT NULL
+
+        UNION ALL
+
+        -- Recursive case: find successors of successors
+        SELECT sc.id, l.successor AS final_successor
+        FROM successor_chain sc
+        JOIN links l ON sc.final_successor = l.id
+        WHERE l.successor IS NOT NULL
+      )
+      -- Select the starting id and the ultimate successor
+      SELECT sc.id, sc.final_successor
+      FROM successor_chain sc
+      LEFT JOIN links l ON sc.final_successor = l.id
+      WHERE l.successor IS NULL;
+    `;
+
+    const successorLinks = await allAsync(querySuccessors);
+    const linkMap = {};
+    successorLinks.forEach((link) => {
+      linkMap[link.id] = link.final_successor;
+    });
+    return linkMap;
+  } catch (err) {
+    console.error('Error fetching successor links:', err);
+    throw err;
+  } finally {
+    closeDatabase();
+  }
+}
+
+
+
 module.exports = {
   fetchLinksFromDB,
   findLinkByIdInDB,
@@ -395,4 +440,5 @@ module.exports = {
   fetchAllTopics,
   createNewLinkInDB,
   fetchAllPersonas,
+  fetchSuccessorList,
 };
